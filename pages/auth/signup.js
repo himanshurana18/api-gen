@@ -4,8 +4,6 @@ import { useEffect } from "react";
 import { useRouter } from "next/router";
 import { useState } from "react";
 import { FaLaptopCode } from "react-icons/fa";
-import { act } from "react";
-import { set } from "mongoose";
 
 export default function signup() {
   const { status } = useSession();
@@ -19,11 +17,13 @@ export default function signup() {
   const [showPopup, setShowPopup] = useState(false);
   const [hasExistingUsers, setHasExistingUsers] = useState(false);
   const router = useRouter();
+
   useEffect(() => {
     if (status === "authenticated") {
       router.push("/dashboard");
     }
   }, [status, router]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -48,12 +48,10 @@ export default function signup() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          action: "signup",
           firstname,
           lastname,
           email,
           password,
-          role: "superAdmin", // default role for the first user
         }),
       });
 
@@ -67,6 +65,8 @@ export default function signup() {
 
       if (!response.ok) {
         setError(data.message || "An error occurred during signup");
+        setIsLoading(false);
+        return;
       }
 
       //create user model automatic when signup(req for database setup)
@@ -74,12 +74,12 @@ export default function signup() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${data.token}`, // Use the token from the signup response
+          Authorization: `Bearer signup-token`, // Use a special token for signup
         },
         body: JSON.stringify({
           modelType: "user",
           data: {
-            id: data.user._id,
+            id: data.user?.id || "sample-id",
             firstname,
             lastname,
             email,
@@ -99,10 +99,13 @@ export default function signup() {
         console.log("User model created successfully");
       }
 
-      localStorage.setItem("token", data.json);
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+      }
       localStorage.setItem("user", JSON.stringify(data.user));
       router.push("/auth/signin");
     } catch (error) {
+      console.error("Signup error:", error);
       setHasExistingUsers(true);
       setShowPopup(true);
       setError("An unexpected error occurred. Please try again.");

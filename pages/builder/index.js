@@ -31,7 +31,7 @@ export default function Builder() {
       return <Unauthorized message="Only work in Development Mode" />;
     }
     fetchModels(); // ✅ page load hote hi models fetch karo
-  }, []);
+  }, [isDevelopment]);
 
   const fetchModels = async () => {
     try {
@@ -62,24 +62,6 @@ export default function Builder() {
     }
   };
 
-  // const deleteModel = async (modelId) => {
-  //   const confirmed = confirm(
-  //     "Are you sure you want to delete this model? It will delete all the pages and API."
-  //   );
-  //   if (!confirmed) return;
-
-  //   try {
-  //     await axios.delete(`/api/models?id=${modelId}`);
-  //     alert("Model deleted successfully");
-  //     fetchModels(); // ✅ list refresh after delete
-  //     router.push("/builder/user");
-  //   } catch (error) {
-  //     alert(
-  //       "Error deleting model: " +
-  //         (error.response?.data?.message || error.message)
-  //     );
-  //   }
-  // };
   const deleteModel = async (modelName) => {
     const confirmed = confirm("Are you sure you want to delete this model?");
     if (!confirmed) return;

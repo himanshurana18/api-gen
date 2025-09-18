@@ -6,6 +6,8 @@ import "@/styles/globals.css"; // agar tum CSS use kar rahe ho
 import { SessionProvider } from "next-auth/react";
 import { RestartProvider } from "@/context/RestartContext";
 import { Bounce, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 function MyApp({ Component, pageProps: { session, ...pageProps } }) {
   const router = useRouter();
   const isAuthPage = ["/auth/signin", "/auth/signup"].includes(router.pathname);

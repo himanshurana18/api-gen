@@ -89,8 +89,9 @@ export default async function handler(req, res) {
       modelName
     )}' }],`;
     lines.push(newLine);
+    const updatedSchemaBody = lines.join("\n");
     const updatedContent = content.replace(schemaBody, updatedSchemaBody);
-    fs.writeFilesync(relatedModelPath, updatedContent);
+    fs.writeFileSync(relatedModelPath, updatedContent);
   };
   const formatFields = (fields) => {
     // add default SEO Fields if they don't exist
@@ -272,7 +273,7 @@ export default async function handler(req, res) {
         fields = Object.entries(userData).map(([key, value]) => {
           // use predefined type for user model fields or determine from value
           let fieldType, datatype, enumValues;
-          if (modelName == "user" && userFieldTypes[key]) {
+          if (modelName === "user" && userFieldTypes[key]) {
             fieldType = userFieldTypes[key].fieldType;
             datatype = userFieldTypes[key].datatype;
             if (userFieldTypes[key].enumValues) {
@@ -283,7 +284,7 @@ export default async function handler(req, res) {
             let type = typeof value;
 
             if (Array.isArray(value)) {
-              fieldType = "date";
+              fieldType = "array";
               datatype = "selectmulti";
             } else if (
               value instanceof Date ||
@@ -299,7 +300,7 @@ export default async function handler(req, res) {
               datatype = "number";
             } else {
               fieldType = "string";
-              datartpe = "textinput";
+              datatype = "textinput";
             }
           }
           // define required fields for user model
@@ -393,7 +394,7 @@ export default async function handler(req, res) {
         process.cwd(),
         "pages",
         "api",
-        `${modelName.toLowerCase()}.js`
+        `${modelNameLower.toLowerCase()}.js`
       );
       // pages/api/public/here.js
       const extApiPath = path.join(
@@ -401,7 +402,7 @@ export default async function handler(req, res) {
         "pages",
         "api",
         "public",
-        `${modelName.toLowerCase()}.js`
+        `${modelNameLower.toLowerCase()}.js`
       );
 
       // pages/manager
@@ -409,7 +410,7 @@ export default async function handler(req, res) {
         process.cwd(),
         "pages",
         "manager",
-        modelName.toLowerCase()
+        modelNameLower.toLowerCase()
       );
 
       // pages/manager/edit/[...id].js
@@ -447,7 +448,7 @@ export default async function handler(req, res) {
       });
 
       const newModel = new ModelSchema({
-        name: modelName.toLowerCase(), // ensure lowercase when saving to db
+        name: modelNameLower, // ensure lowercase when saving to db
         fields,
       });
 
@@ -552,7 +553,7 @@ export default async function handler(req, res) {
         process.cwd(),
         "pages",
         "api",
-        `${newModelName}.js`
+        `${modelNameLower.toLowerCase()}.js`
       );
       // pages/api/public/here.js
       const extApiPath = path.join(
@@ -560,21 +561,21 @@ export default async function handler(req, res) {
         "pages",
         "api",
         "public",
-        `${newModelName}.js`
+        `${modelNameLower.toLowerCase()}.js`
       );
 
       // pages/manager
-      const pageFolderpath = path.join(
+      const pageFolderPath = path.join(
         process.cwd(),
         "pages",
         "manager",
-        newModelName
+        modelNameLower.toLowerCase()
       );
-      const createpagePath = path.join(pageFolderpath, "create.js");
-      editFolderpath = path.join(pageFolderpath, "edit");
+      const createPagePath = path.join(pageFolderPath, "create.js");
+      const editFolderPath = path.join(pageFolderPath, "edit");
 
       // pages/manager/edit/[...id].js
-      const editpagepath = path.join(editFolderpath, "[...id].js");
+      const editPagePath = path.join(editFolderPath, "[...id].js");
 
       // components/here.js
       const componentPath = path.join(
@@ -592,7 +593,7 @@ export default async function handler(req, res) {
       // write all new files
       fs.writeFileSync(modelPath, modelContent);
       fs.writeFileSync(apiPath, apiContent);
-      fs.writeFileSync(externalApiPath, externalApiContent);
+      fs.writeFileSync(extApiPath, externalApiContent);
       fs.writeFileSync(path.join(pageFolderPath, "index.js"), pageContent);
       fs.writeFileSync(createPagePath, createPageContent);
       fs.writeFileSync(editPagePath, editPageContent);
@@ -608,7 +609,7 @@ export default async function handler(req, res) {
       // update db
       await ModelSchema.findByIdAndUpdate(id, { name: modelNameLower, fields });
       return res
-        .json(200)
+        .status(200)
         .json({ message: "Model updated and fields regenerated successfully" });
     } catch (err) {
       console.log(" error updating model", err);

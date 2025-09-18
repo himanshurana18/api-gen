@@ -4,6 +4,7 @@ import axios from "axios";
 import Link from "next/link";
 
 import { RiDeleteBinLine } from "react-icons/ri";
+import { RiEdit2Line } from "react-icons/ri";
 import { FaCheck } from "react-icons/fa";
 import { FaTrash } from "react-icons/fa";
 import { FaPlus } from "react-icons/fa";
@@ -32,7 +33,7 @@ export default function BuilderDynamic() {
   const [required, setRequired] = useState(false);
   const [enumValues, setEnumValues] = useState("");
   const [showRestartPopup, setshowRestartPopup] = useState(false);
-  const [modelName, setmodelName] = useState("");
+  const [modelName, setModelName] = useState("");
   const [fields, setFields] = useState([]);
   const [modelId, setModelId] = useState("");
   const [existingModels, setExistingModels] = useState([]);
@@ -49,9 +50,6 @@ export default function BuilderDynamic() {
     }
   }, []);
 
-  //   if (!hasRouteAccess(session?.user?.userRole, "/builder")) {
-  //     return <Unauthorized />;
-  //   }
 
   const fetchModels = async () => {
     try {
@@ -68,7 +66,7 @@ export default function BuilderDynamic() {
   const fetchModelDetails = async (modelId) => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/models/${modelId}`);
+      const response = await axios.get(`/api/models?id=${modelId}`);
       const modelData = response.data;
       setModelName(modelData.name);
       setModelId(modelData._id); // store model id here
@@ -89,8 +87,7 @@ export default function BuilderDynamic() {
       router.push(`/builder/${newModelName}`);
     } catch (error) {
       alert(
-        "Error creating model",
-        +(error?.response?.data?.message || error.message)
+        "Error creating model: " + (error?.response?.data?.message || error.message)
       );
     }
   };
@@ -148,12 +145,12 @@ export default function BuilderDynamic() {
 
       const newField = {
         name: fieldName,
-        type: FieldType,
+        type: fieldType,
         datatype: dataType,
         required,
         refModel: fieldType === "arrayrelation" ? selectedModel : "",
         enumValues:
-          dataType === "selectmulti" || "singleselect"
+          dataType === "selectmulti" || dataType === "singleselect"
             ? enumValues.split("\n").filter(Boolean)
             : [],
       };
@@ -187,31 +184,21 @@ export default function BuilderDynamic() {
     if (!modelName.trim()) return alert("Enter a model name");
 
     try {
-      try {
-        let response;
+      let response;
 
-        if (modelId) {
-          // update existing model
-          response = await axios.put(`/api/models?id=${modelId}`, {
-            modelName,
-            fields,
-          });
-        } else {
-          // create new model
-          response = await axios.post(`/api/models`, { modelName, fields });
-          setModelId(response.data._id); // store the new model id
-          resetForm();
-        }
-        startRestart();
-      } catch (error) {
-        if (error.response.status === 403) {
-          toast.error("permission denied to demo user");
-        }
-        if (error.response.status === 409) {
-          toast.error("cannot delete the last superadmin user");
-        }
-        // handle error
+      if (modelId) {
+        // update existing model
+        response = await axios.put(`/api/models?id=${modelId}`, {
+          modelName,
+          fields,
+        });
+      } else {
+        // create new model
+        response = await axios.post(`/api/models`, { modelName, fields });
+        setModelId(response.data._id); // store the new model id
+        resetForm();
       }
+      startRestart();
     } catch (err) {
       console.log("error saving model", err);
       alert(
@@ -221,37 +208,15 @@ export default function BuilderDynamic() {
   };
 
   const resetForm = () => {
-    setmodelName("");
+    setModelName("");
     setFields([]);
   };
 
   const capitalizeFirstLetter = (str) => {
-    if (!modelId) {
-      alert("Model ID is missing. Cannot delete model.");
-      return;
-    }
     if (!str) return str; // return if the string is empty
     return str.charAt(0).toUpperCase() + str.slice(1);
   };
 
-  // const deleteModel = async (modelId) => {
-  //   const confirmed = confirm(
-  //     "Are you sure you want to delete this model? It will delete all the pages and API."
-  //   );
-  //   if (!confirmed) return;
-
-  //   try {
-  //     await axios.delete(`/api/models?id=${modelId}`);
-  //     alert("Model deleted successfully");
-  //     fetchModels();
-  //     router.push("/builder/user");
-  //   } catch (error) {
-  //     alert(
-  //       "Error deleting model: " +
-  //         (error.response?.data?.message || error.message)
-  //     );
-  //   }
-  // };
   useEffect(() => {
     fetchModels();
     if (model) {
@@ -263,7 +228,7 @@ export default function BuilderDynamic() {
     try {
       setLoading(true);
       const response = await axios.get(
-        `/api/${model.name.toLowerCase()}?page=1&limit=10`
+        `/api/${modelName.toLowerCase()}?page=1&limit=10`
       );
       setSelectedModel(response.data);
       setShowJsonViewer(true);
@@ -274,6 +239,7 @@ export default function BuilderDynamic() {
       setLoading(false);
     }
   };
+
   const deleteModel = async (id) => {
     if (!id) {
       alert("Cannot delete: Model ID is missing");
@@ -365,7 +331,7 @@ export default function BuilderDynamic() {
                     type="text"
                     placeholder="Model Name"
                     value={modelName}
-                    onChange={(e) => setmodelName(e.target.value)}
+                    onChange={(e) => setModelName(e.target.value)}
                   />
                   {modelName && (
                     <div className="api_path_display">
@@ -599,7 +565,7 @@ export default function BuilderDynamic() {
             </div>
 
             <table>
-              <table>
+              <thead>
                 <tr>
                   <th>No.</th>
                   <th>NAME</th>
@@ -607,7 +573,7 @@ export default function BuilderDynamic() {
                   <th>DATA TYPE</th>
                   <th>ACTIONS</th>
                 </tr>
-              </table>
+              </thead>
               <tbody>
                 {fields.length === 0 ? (
                   <tr>
